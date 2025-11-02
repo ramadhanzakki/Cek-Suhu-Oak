@@ -23,8 +23,8 @@ class TempSensor:
             self.suhu = self.baca_dari_file()
 
         return {
-            'temperature': self.suhu,
             'timestamp': datetime.now(),
+            'temperature': self.suhu,
             'reading_number': self.jumlah_data
         }
 
