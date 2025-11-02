@@ -37,6 +37,7 @@ class TempSensor:
             self.suhu = self.buat_temperatur_acak()
         elif self.sumber_data == 'file':
             self.suhu = self.baca_suhu_dari_file()
+            
 
         return {
             'waktu': datetime.now(),
