@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from .sensor import TempSensor
 
 
-class DataStatus:
+class DataBus:
     def __init__(self, cpu_target: 'CPU'):
         print('Inisialisasi data bus')
 

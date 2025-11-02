@@ -5,3 +5,5 @@ TEMPERATURE_MAX = 42.0
 
 BATAS_HIPO = 35.0
 BATAS_DEMAM = 38.0
+
+OUTPUT_FILE = 'data/output/monitoring_log.csv'
