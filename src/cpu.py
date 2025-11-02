@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 class CPU:
     def __init__(self):
         print('Inisialisasi CPU')
-        self.bus = 'DataBus' | None = None
+        self.bus : 'DataBus' | None = None
         self.is_running = False
         self._thread = None
 
@@ -26,7 +26,7 @@ class CPU:
         print('CPU terhububg ke Data Bus')
         self.bus = bus
 
-    def _set_up_log_file(self):
+    def _setup_log_file(self):
         try:
             os.makedirs(os.path.dirname(self.log_file_path), exist_ok=True)
 
