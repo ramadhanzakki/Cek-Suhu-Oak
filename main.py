@@ -12,6 +12,7 @@ try:
     from src.bus import DataBus
     # TAMBAHKAN impor visualizer
     from src.visualizer import TemperatureVisualizer
+    from src.logger import Logger
     import config
 except ModuleNotFoundError as e:
     print(f"ERROR: Gagal import modul...")
@@ -31,9 +32,11 @@ def main():
     print("Mulai inisialisasi komponen...")
 
     # --- 1. Perakitan Komponen ---
+    logger = Logger()
     cpu_utama = CPU()
     bus_data = DataBus(cpu_target=cpu_utama)
     cpu_utama.attach_bus(bus_data)
+    cpu_utama.attach_logger(logger)
 
     # TAMBAHKAN: Buat instance visualizer
     viz = TemperatureVisualizer(max_points=config.PLOT_HISTORY_LENGTH)
@@ -54,6 +57,7 @@ def main():
         bus_data.register_sensor(sensor)
 
     # Jalankan CPU
+    logger.run()
     cpu_utama.run()
     
     # TAMBAHKAN: Jalankan visualizer di thread-nya sendiri
@@ -103,6 +107,7 @@ def main():
         print("Memberi CPU 1 detik untuk memproses sisa log...")
         time.sleep(1) 
         cpu_utama.stop()
+        logger.stop()
         
         print("\nSimulasi berhasil dihentikan. Selamat tinggal!")
         print("="*50)
