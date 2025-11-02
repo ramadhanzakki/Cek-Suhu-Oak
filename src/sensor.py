@@ -16,9 +16,8 @@ class TempSensor:
         self.suhu = 37.1
         self.is_active = False
 
-        dir_utama = os.path.dirname(os.path.abspath(__file__))
+        dir_utama = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.file_path = os.path.join(dir_utama, 'data', 'input', 'input.csv')
-
         self.data_suhu_dari_file = []
 
     def baca_temperatur(self):
