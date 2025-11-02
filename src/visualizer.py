@@ -22,7 +22,7 @@ import threading
 # Import config dengan fallback
 try:
     import config
-    FEVER_THRESHOLD = config.FEVER_THRESHOLD
+    FEVER_THRESHOLD = config.BATAS_DEMAM
     PLOT_UPDATE_INTERVAL = config.PLOT_UPDATE_INTERVAL
     PLOT_HISTORY_LENGTH = config.PLOT_HISTORY_LENGTH
     PLOT_WINDOW_SIZE = config.PLOT_WINDOW_SIZE
