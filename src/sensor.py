@@ -9,11 +9,12 @@ from datetime import datetime
 
 class TempSensor:
 
-    def __init__(self, sumber_data: str = 'random'):
+    def __init__(self,id: str, sumber_data: str = 'random'):
         self.sumber_data = sumber_data
         self.jumlah_data = 0
         self._thread = None
         self.suhu = 37.1
+        self.id = id
         self.is_active = False
 
         dir_utama = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -29,8 +30,9 @@ class TempSensor:
             self.suhu = self.baca_dari_file()
 
         return {
-            'timestamp': datetime.now(),
-            'temperature': self.suhu,
+            'waktu': datetime.now(),
+            'id' : self.id,
+            'suhu': self.suhu,
             'reading_number': self.jumlah_data
         }
 
