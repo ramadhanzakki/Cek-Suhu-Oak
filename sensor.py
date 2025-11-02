@@ -63,7 +63,7 @@ class TempSensor:
         
         self.is_active = True
 
-        self._thread = threading.Thread(target=self._polling_loop, daemon=True) 
+        self._thread = threading.Thread(target=self.looping, daemon=True) 
         self._thread.start()
 
     
