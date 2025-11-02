@@ -62,6 +62,8 @@ class Logger:
             # Cetak ke konsol juga (opsional, tapi bagus untuk debug)
             if status == "NORMAL":
                 print(f"[Logger]: Data normal dari {data['id']}: {suhu}°C")
+            elif status == "HIPOTERMIA":
+                print(f"[Logger]: PERINGATAN HIPOTERMIA dari {data['id']}: {suhu}°C")
                 
         except Exception as e:
             print(f"ERROR: Gagal menulis log: {e}")
