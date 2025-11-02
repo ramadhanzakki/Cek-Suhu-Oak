@@ -14,6 +14,8 @@ class TempSensor:
         self.jumlah_data = 0
         self._thread = None
         self.suhu = 37.1
+        self.on_data_callback = None
+        self.index_file = 0
         self.id = id
         self.is_active = False
 
@@ -21,13 +23,20 @@ class TempSensor:
         self.file_path = os.path.join(dir_utama, 'data', 'input', 'input.csv')
         self.data_suhu_dari_file = []
 
+        if self.sumber_data == 'file':
+            self._muat_data_dari_file()
+            if not self.data_suhu_dari_file:
+                print(f"PERINGATAN: Gagal memuat data file, sensor '{self.id}' akan beralih ke mode 'random'.")
+                self.sumber_data = 'random'
+
+
     def baca_temperatur(self):
         self.jumlah_data += 1
 
         if self.sumber_data == 'random':
             self.suhu = self.buat_temperatur_acak()
         elif self.sumber_data == 'file':
-            self.suhu = self.baca_dari_file()
+            self.suhu = self.baca_suhu_dari_file()
 
         return {
             'waktu': datetime.now(),
@@ -53,28 +62,34 @@ class TempSensor:
             with open(self.file_path, 'r') as file:
                 reader = csv.DictReader(file)
 
-                try:
-                    next(reader)
-                except StopIteration:
-                    pass
-
                 for row in reader:
-                    self.data_suhu_dari_file.append(float(row))
+                    try:
+                        self.data_suhu_dari_file.append(float(row['suhu']))
+                    except (ValueError, KeyError):
+                        pass
 
             if not self.data_suhu_dari_file:
                 print(f"PERINGATAN: Tidak ada data di {self.file_path}")
             else:
                 print(
-                    f"Berhasil memuat {len(self.data_buffer)} data dari file.")
+                    f"Berhasil memuat {len(self.data_suhu_dari_file)} data dari file.")
 
         except FileNotFoundError:
             print(f"ERROR: File CSV tidak ditemukan di {self.file_path}")
-            self.data_buffer = []
+            self.data_suhu_dari_file = []
 
     def baca_suhu_dari_file(self):
         if not self.data_suhu_dari_file:
             print("Peringatan: Meminta data file, tapi buffer kosong.")
-        return self.data_suhu_dari_file
+            return self.suhu
+        nilai_suhu = self.data_suhu_dari_file[self.index_file]
+        self.index_file += 1
+
+        if self.index_file >= len(self.data_suhu_dari_file):
+            self.index_file = 0
+
+        return nilai_suhu
+    
 
     def looping(self):
         print('\n======Monitoring Started======')
@@ -82,17 +97,27 @@ class TempSensor:
         while self.is_active:
             data = self.baca_temperatur()
 
-            time.sleep(config.JEDA)
+            if self.on_data_callback:
+                try:
+                    self.on_data_callback(data)
+                except Exception as e:
+                    print(f"Error saat menjalankan callback: {e}")
+
+            start_sleep = time.time()
+            while time.time() - start_sleep < config.JEDA:
+                if not self.is_active:
+                    break
+                time.sleep(0.1)
 
         print('\n======Monitoring Stopped======')
 
-    def mulai_monitoring(self):
+    def mulai_monitoring(self, callback_function):
         if self.is_active:
             print('Sensor already active')
             return
 
+        self.on_data_callback = callback_function
         self.is_active = True
-
         self._thread = threading.Thread(target=self.looping, daemon=True)
         self._thread.start()
 
