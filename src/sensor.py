@@ -38,6 +38,8 @@ class TempSensor:
         elif self.sumber_data == 'file':
             self.suhu = self.baca_suhu_dari_file()
             
+            if self.suhu is None:
+                return None
 
         return {
             'waktu': datetime.now(),
@@ -80,23 +82,25 @@ class TempSensor:
             self.data_suhu_dari_file = []
 
     def baca_suhu_dari_file(self):
-        if not self.data_suhu_dari_file:
-            print("Peringatan: Meminta data file, tapi buffer kosong.")
-            return self.suhu
+        if self.index_file >= len(self.data_suhu_dari_file):
+            return None  
+
         nilai_suhu = self.data_suhu_dari_file[self.index_file]
         self.index_file += 1
-
-        if self.index_file >= len(self.data_suhu_dari_file):
-            self.index_file = 0
-
+        
+        
         return nilai_suhu
     
 
     def looping(self):
-        print('\n======Monitoring Started======')
+        print(f'\n======Monitoring Started {self.id}======')
 
         while self.is_active:
             data = self.baca_temperatur()
+
+            if data is None:
+                print(f"\nINFO: Sensor '{self.id}' telah selesai membaca file.")
+                break
 
             if self.on_data_callback:
                 try:
@@ -104,13 +108,18 @@ class TempSensor:
                 except Exception as e:
                     print(f"Error saat menjalankan callback: {e}")
 
+            if self.sumber_data == 'random' and self.jumlah_data >= config.JUMLAH_MAKSIMAL_RANDOM:
+                print(f"\nINFO: Sensor '{self.id}' telah mencapai batas {config.JUMLAH_MAKSIMAL_RANDOM} data random.")
+                break
+
             start_sleep = time.time()
             while time.time() - start_sleep < config.JEDA:
                 if not self.is_active:
                     break
                 time.sleep(0.1)
 
-        print('\n======Monitoring Stopped======')
+        print(f'\n======Monitoring Stopped {self.id}======')
+        self.is_active = False
 
     def mulai_monitoring(self, callback_function):
         if self.is_active:
