@@ -34,6 +34,8 @@ class CPU:
         print(f"    SUHU:   {alert_data['suhu']}°C")
         print("="*40 + "\n")
 
+    # Di dalam file src/cpu.py
+
     def _processing_loop(self):
         """
         Mensimulasikan siklus proses (clock cycle) CPU.
@@ -64,14 +66,25 @@ class CPU:
                         status = "NORMAL"
 
                     # 3. CPU memanggil logger sinkron
-                    # Program akan 'berhenti' di baris ini sejenak
+                    #    (Ini akan menulis 'HIPOTERMIA' ke file CSV)
                     self.logger.writeData(id_sensor, suhu, status)
                     
-                    # 4. Cetak ke konsol (opsional, tapi bagus)
+                    # 4. Cetak ke konsol (MODIFIKASI)
                     if status == "NORMAL":
                         print(f"[CPU->Log]: Data normal dari {id_sensor}: {suhu}°C")
+                    
                     elif status == "HIPOTERMIA":
-                        print(f"[CPU->Log]: PERINGATAN HIPOTERMIA dari {id_sensor}: {suhu}°C")
+                        # --- INI BLOK BARU ANDA ---
+                        # Cetak blok peringatan agar "rame"
+                        print("\n" + "="*40)
+                        print(f"!!! PERINGATAN (CPU-LOG) !!!") # Kita sebut CPU-LOG
+                        print(f"    ALERT: Hipotermia terdeteksi!")
+                        print(f"    SENSOR: {id_sensor}")
+                        print(f"    SUHU:   {suhu}°C")
+                        print("="*40 + "\n")
+                    
+                    # (Status "ALERT" untuk DEMAM tidak perlu dicetak di sini,
+                    # karena itu sudah ditangani oleh handle_interrupt)
                         
                 except Exception as e:
                     print(f"ERROR: CPU gagal memproses log: {e}")
