@@ -49,8 +49,7 @@ def main():
     print(f"Mode Sumber Data Global diatur ke: '{config.DATA_SOURCE.upper()}'")
 
     list_sensor = [
-        TempSensor(id='Kamar-101 (File)'),
-        TempSensor(id='Kamar-102 (File)')
+        TempSensor(id='Kamar-101 (File)')
     ]
     
     print("\nKomponen berhasil dirakit.")
