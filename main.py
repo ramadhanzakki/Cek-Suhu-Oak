@@ -44,9 +44,11 @@ def main():
     # TAMBAHKAN: Tancapkan visualizer ke Bus
     bus_data.attach_visualizer(viz)
 
+    print(f"Mode Sumber Data Global diatur ke: '{config.DATA_SOURCE.upper()}'")
+
     list_sensor = [
-        TempSensor(id='Kamar-101 (Random)', sumber_data='random'),
-        TempSensor(id='Kamar-102 (File)', sumber_data='file')
+        TempSensor(id='Kamar-101 (File)'),
+        TempSensor(id='Kamar-102 (File)')
     ]
     
     print("\nKomponen berhasil dirakit.")
@@ -67,6 +69,8 @@ def main():
 
     print("\n" + "="*50)
     print("     SIMULASI BERJALAN")
+    print(f"     Mode Sumber Data: {config.DATA_SOURCE.upper()}")
+    print(f"     File log akan disimpan di: {config.OUTPUT_FILE}")
     # ... (sisanya sama) ...
     print("="*50 + "\n")
 

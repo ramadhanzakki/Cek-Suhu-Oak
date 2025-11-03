@@ -9,8 +9,8 @@ from datetime import datetime
 
 class TempSensor:
 
-    def __init__(self,id: str, sumber_data: str = 'random'):
-        self.sumber_data = sumber_data
+    def __init__(self,id: str):
+        self.sumber_data = config.DATA_SOURCE
         self.jumlah_data = 0
         self._thread = None
         self.suhu = 37.1
