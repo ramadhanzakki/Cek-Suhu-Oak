@@ -5,8 +5,8 @@ Implementasi animation dengan FuncAnimation untuk live updates.
 
 Features:
 - Real-time line plot
-- Fever threshold line
-- Color coding (green=normal, red=fever)
+- Fever & Hypothermia threshold line
+- Color coding (blue=hypothermia, green=normal, red=fever)
 - Alert markers
 - Auto-scroll window
 """
@@ -36,23 +36,12 @@ except:
 class TemperatureVisualizer:
     """
     Real-time temperature visualizer menggunakan Matplotlib.
-    
-    Konsep:
-    - FuncAnimation untuk update plot secara periodik
-    - Deque untuk sliding window data (FIFO)
-    - Thread-safe data handling
     """
-    
+
     def __init__(self, max_points: int = PLOT_HISTORY_LENGTH):
-        """
-        Initialize visualizer.
-        
-        Args:
-            max_points: Maximum data points yang ditampilkan di plot
-        """
         self.max_points = max_points
         
-        # Data storage (thread-safe dengan deque)
+        # Data storage
         self.times: Deque[float] = deque(maxlen=max_points)
         self.temperatures: Deque[float] = deque(maxlen=max_points)
         self.is_fever: Deque[bool] = deque(maxlen=max_points)
@@ -70,6 +59,7 @@ class TemperatureVisualizer:
         self.line = None
         self.scatter = None
         self.threshold_line = None
+        self.hypo_line = None
         self.animation = None
         
         # State
@@ -77,157 +67,123 @@ class TemperatureVisualizer:
         self.start_time = datetime.now()
         
         print("[VISUALIZER] Initialized")
-        print("===== INI ADALAH KODE VISUALIZER DEQUE (YANG BENAR) =====")
-    
+
     def add_data_point(self, temperature: float, is_fever: bool = False):
-        """
-        Add new temperature data point (thread-safe).
-        
-        Args:
-            temperature: Temperature value
-            is_fever: Whether this reading is fever
-        """
+        """Add new temperature data point (thread-safe)."""
         with self._lock:
             elapsed = (datetime.now() - self.start_time).total_seconds()
             self.times.append(elapsed)
             self.temperatures.append(temperature)
             self.is_fever.append(is_fever)
             
-            # Track fever alerts for markers
             if is_fever:
                 self.alert_times.append(elapsed)
                 self.alert_temps.append(temperature)
-    
+
     def setup_plot(self):
         """Setup matplotlib figure dan axes."""
-        # Create figure
         self.fig, self.ax = plt.subplots(figsize=PLOT_WINDOW_SIZE)
-        
-        # Configure plot
         self.ax.set_xlabel('Time (seconds)', fontsize=12)
         self.ax.set_ylabel('Temperature (°C)', fontsize=12)
-        self.ax.set_title('Real-Time Patient Temperature Monitoring', 
+        self.ax.set_title('Real-Time Patient Temperature Monitoring',
                          fontsize=14, fontweight='bold')
         self.ax.grid(True, alpha=0.3)
-        
-        # Set y-axis limits
-        self.ax.set_ylim(35, 42)
-        
-        # Initialize empty line
+        self.ax.set_ylim(33, 42)
+
+        # Garis suhu utama
         self.line, = self.ax.plot([], [], 'b-', linewidth=2, label='Temperature')
-        
-        # Initialize scatter for alerts
+
+        # Marker alert
         self.scatter = self.ax.scatter([], [], c='red', s=100, 
-                                       marker='X', zorder=5, 
-                                       label='Fever Alert')
-        
-        # Threshold line
+                                       marker='X', zorder=5, label='Fever Alert')
+
+        # Garis batas demam
         self.threshold_line = self.ax.axhline(y=FEVER_THRESHOLD, 
-                                              color='red', 
-                                              linestyle='--', 
-                                              linewidth=2, 
-                                              alpha=0.7,
+                                              color='red', linestyle='--', linewidth=2, alpha=0.7,
                                               label=f'Fever Threshold ({FEVER_THRESHOLD}°C)')
-        
-        # Legend
+
+        # Garis batas hipotermia
+        self.hypo_line = self.ax.axhline(y=35.0,
+                                         color='blue', linestyle='--', linewidth=2, alpha=0.7,
+                                         label='Hypothermia Threshold (35.0°C)')
+
         self.ax.legend(loc='upper left', fontsize=10)
-        
-        # Tight layout
         self.fig.tight_layout()
-        
         print("[VISUALIZER] Plot setup complete")
-    
+
     def _update_plot(self, frame):
-        """
-        Update function untuk FuncAnimation.
-        Dipanggil secara periodik untuk update plot.
-        
-        Args:
-            frame: Frame number (dari FuncAnimation)
-        """
+        """Update function untuk FuncAnimation."""
         with self._lock:
             if len(self.times) > 0:
-                # Convert deque to list untuk plotting
                 times_list = list(self.times)
                 temps_list = list(self.temperatures)
-                
-                # Update line data
+
                 self.line.set_data(times_list, temps_list)
-                
-                # Color code: green for normal, red for fever
-                colors = ['red' if fever else 'green' 
-                         for fever in self.is_fever]
-                
-                # Update line color berdasarkan data terakhir
-                if self.is_fever[-1]:
-                    self.line.set_color('red')
-                else:
-                    self.line.set_color('green')
-                
-                # Update alert markers
-                if len(self.alert_times) > 0:
-                    alert_times_list = list(self.alert_times)
-                    alert_temps_list = list(self.alert_temps)
-                    self.scatter.set_offsets(
-                        list(zip(alert_times_list, alert_temps_list))
-                    )
-                
-                # Auto-scale x-axis
-                if len(times_list) > 0:
-                    self.ax.set_xlim(max(0, times_list[-1] - 30), 
-                                    times_list[-1] + 5)
-                
-                # Update title dengan current temp
+
                 current_temp = temps_list[-1]
-                status = "🔴 FEVER" if self.is_fever[-1] else "🟢 NORMAL"
+
+                # Tentukan status suhu
+                if current_temp < 35.0:
+                    status = "❄️ HYPOTHERMIA"
+                    color = "blue"
+                elif current_temp > 37.5:
+                    status = "🔴 FEVER"
+                    color = "red"
+                else:
+                    status = "🟢 NORMAL"
+                    color = "green"
+
+                # Update warna garis
+                self.line.set_color(color)
+
+                # Update judul grafik
                 self.ax.set_title(
                     f'Real-Time Patient Temperature Monitoring | '
                     f'Current: {current_temp:.1f}°C {status}',
-                    fontsize=14, fontweight='bold'
+                    fontsize=14, fontweight='bold',
+                    color=color
                 )
-        
+
+                # Update marker alert
+                if len(self.alert_times) > 0:
+                    self.scatter.set_offsets(
+                        list(zip(list(self.alert_times), list(self.alert_temps)))
+                    )
+
+                # Auto-scale x-axis
+                if len(times_list) > 0:
+                    self.ax.set_xlim(max(0, times_list[-1] - 30),
+                                     times_list[-1] + 5)
+
         return self.line, self.scatter
-    
+
     def start(self):
-        """Start visualization (non-blocking)."""
+        """Start visualization (blocking)."""
         if self.is_running:
             print("[VISUALIZER] Already running")
             return
-        
         self.is_running = True
-        
-        # Setup plot
+
         self.setup_plot()
-        
-        # Create animation
         self.animation = animation.FuncAnimation(
             self.fig,
             self._update_plot,
-            interval=PLOT_UPDATE_INTERVAL,  # Update setiap 100ms
+            interval=PLOT_UPDATE_INTERVAL,
             blit=True,
             cache_frame_data=False
         )
-        
+
         print("[VISUALIZER] Animation started")
-        print(f"[VISUALIZER] Update interval: {PLOT_UPDATE_INTERVAL}ms")
-        
-        # Show plot (blocking call)
-        # NOTE: plt.show() akan block thread ini
-        # Untuk non-blocking, run di thread terpisah
         plt.show()
-    
+
     def start_in_thread(self):
         """Start visualization di thread terpisah (non-blocking)."""
         if self.is_running:
             print("[VISUALIZER] Already running")
             return
-        
-        # Run visualization di thread terpisah
-        viz_thread = threading.Thread(target=self.start, daemon=True)
-        viz_thread.start()
-        
+        threading.Thread(target=self.start, daemon=True).start()
         print("[VISUALIZER] Started in background thread")
-    
+
     def stop(self):
         """Stop visualization."""
         self.is_running = False
@@ -237,62 +193,27 @@ class TemperatureVisualizer:
         print("[VISUALIZER] Stopped")
 
 
-# ============================================================================
-# TESTING CODE
-# ============================================================================
-
+# =====================================================================
+# TESTING (bisa dijalankan langsung untuk uji mandiri)
+# =====================================================================
 if __name__ == "__main__":
-    """
-    Test visualizer standalone dengan simulated data.
-    """
-    import time
-    import random
-    
+    import time, random
     print("="*70)
     print(" VISUALIZER MODULE - STANDALONE TEST ".center(70, "="))
     print("="*70)
-    print()
-    
-    print("Creating visualizer...")
     viz = TemperatureVisualizer(max_points=50)
-    
-    print("Starting visualization in background thread...")
     viz.start_in_thread()
-    
-    # Wait for plot window to open
     time.sleep(2)
-    
-    print("\nGenerating simulated temperature data...")
-    print("Watch the plot window for real-time updates!")
-    print("Close the plot window to exit.\n")
-    
+
     try:
-        # Simulate temperature readings
         for i in range(100):
-            # Generate random temperature (mostly normal, sometimes fever)
-            if random.random() < 0.2:  # 20% chance fever
-                temp = random.uniform(38.0, 40.5)
-                is_fever = True
-            else:
-                temp = random.uniform(35.5, 37.8)
-                is_fever = False
-            
-            # Add to visualizer
+            temp = random.uniform(33.5, 40.5)
+            is_fever = temp > 37.5
             viz.add_data_point(temp, is_fever)
-            
-            # Print status
-            status = "🔴 FEVER" if is_fever else "🟢 NORMAL"
-            print(f"[{i+1:3d}] {temp:.1f}°C {status}")
-            
-            # Sleep to simulate real-time data (2 seconds per reading)
-            time.sleep(0.5)  # Faster untuk testing
-            
+            time.sleep(0.5)
     except KeyboardInterrupt:
         print("\n[TEST] Interrupted by user")
-    
-    print("\n[TEST] Stopping visualizer...")
     viz.stop()
-    
     print("\n" + "="*70)
     print(" TEST COMPLETED ".center(70, "="))
     print("="*70)
