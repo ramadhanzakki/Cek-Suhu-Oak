@@ -77,6 +77,7 @@ class TemperatureVisualizer:
         self.start_time = datetime.now()
         
         print("[VISUALIZER] Initialized")
+        print("===== INI ADALAH KODE VISUALIZER DEQUE (YANG BENAR) =====")
     
     def add_data_point(self, temperature: float, is_fever: bool = False):
         """

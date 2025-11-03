@@ -35,19 +35,52 @@ class CPU:
         print("="*40 + "\n")
 
     def _processing_loop(self):
-        print("CPU 'processing loop' (logging) dimulai...")
+        """
+        Mensimulasikan siklus proses (clock cycle) CPU.
+        MODIFIKASI: CPU sekarang juga menentukan status log.
+        """
+        print("CPU 'processing loop' (Logging Sinkron) dimulai...")
         while self.is_running:
             if not self.bus or not self.logger:
-                print("CPU: Menunggu bus ditancapkan...")
+                print("CPU: Menunggu bus dan logger ditancapkan...")
                 time.sleep(1)
                 continue
-            
+                
+            # 1. CPU 'polling' data dari buffer bus
             data = self.bus.get_buffered_data()
             
             if data:
-                self.logger.log_data(data)
+                # --- LOGIKA PINDAH KE SINI ---
+                try:
+                    suhu = data['suhu']
+                    id_sensor = data['id']
+                    
+                    # 2. CPU menentukan status
+                    if suhu > config.BATAS_DEMAM:
+                        status = "ALERT"
+                    elif suhu < config.BATAS_HIPO:
+                        status = "HIPOTERMIA"
+                    else:
+                        status = "NORMAL"
+
+                    # 3. CPU memanggil logger sinkron
+                    # Program akan 'berhenti' di baris ini sejenak
+                    self.logger.writeData(id_sensor, suhu, status)
+                    
+                    # 4. Cetak ke konsol (opsional, tapi bagus)
+                    if status == "NORMAL":
+                        print(f"[CPU->Log]: Data normal dari {id_sensor}: {suhu}°C")
+                    elif status == "HIPOTERMIA":
+                        print(f"[CPU->Log]: PERINGATAN HIPOTERMIA dari {id_sensor}: {suhu}°C")
+                        
+                except Exception as e:
+                    print(f"ERROR: CPU gagal memproses log: {e}")
+                # --- AKHIR LOGIKA ---
             else:
-                time.sleep(0.1)
+                # 3. Tidak ada data di bus, CPU bisa 'idle'
+                time.sleep(0.1) 
+
+        print("CPU 'processing loop' dihentikan.")
 
     def run(self):
         if self.is_running:

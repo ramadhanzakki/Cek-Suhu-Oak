@@ -36,7 +36,9 @@ def main():
     cpu_utama = CPU()
     bus_data = DataBus(cpu_target=cpu_utama)
     cpu_utama.attach_bus(bus_data)
+    logger.setup()
     cpu_utama.attach_logger(logger)
+
 
     # TAMBAHKAN: Buat instance visualizer
     viz = TemperatureVisualizer(max_points=config.PLOT_HISTORY_LENGTH)
@@ -59,7 +61,6 @@ def main():
         bus_data.register_sensor(sensor)
 
     # Jalankan CPU
-    logger.run()
     cpu_utama.run()
     
     # TAMBAHKAN: Jalankan visualizer di thread-nya sendiri
@@ -102,6 +103,7 @@ def main():
     
     finally:
         # --- BLOK SHUTDOWN ---
+        print("\nMenghentikan semua komponen...")
         
         # TAMBAHKAN: Hentikan Visualizer
         if 'viz' in locals() and viz.is_running:
@@ -111,7 +113,7 @@ def main():
         print("Memberi CPU 1 detik untuk memproses sisa log...")
         time.sleep(1) 
         cpu_utama.stop()
-        logger.stop()
+        logger.close()
         
         print("\nSimulasi berhasil dihentikan. Selamat tinggal!")
         print("="*50)
