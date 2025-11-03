@@ -88,7 +88,7 @@ class TemperatureVisualizer:
         self.ax.set_title('Real-Time Patient Temperature Monitoring',
                          fontsize=14, fontweight='bold')
         self.ax.grid(True, alpha=0.3)
-        self.ax.set_ylim(33, 42)
+        self.ax.set_ylim(31, 42)
 
         # Garis suhu utama
         self.line, = self.ax.plot([], [], 'b-', linewidth=2, label='Temperature')
@@ -123,10 +123,10 @@ class TemperatureVisualizer:
                 current_temp = temps_list[-1]
 
                 # Tentukan status suhu
-                if current_temp < 35.0:
+                if current_temp < 36.0:
                     status = "❄️ HYPOTHERMIA"
                     color = "blue"
-                elif current_temp > 37.5:
+                elif current_temp > 38.0:
                     status = "🔴 FEVER"
                     color = "red"
                 else:
